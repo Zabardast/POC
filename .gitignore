@@ -1,0 +1,6 @@
+esp32/wifi_tmp/include/keys.c
+computer_vision/simple_opencv_pixel_walk/.vscode/*
+computer_vision/simple_opencv_pixel_walk/build/*
+computer_vision/simple_opencv_pixel_walk/img/*
+esp32/wifi/include/keys.c
+esp32/wifi/.*

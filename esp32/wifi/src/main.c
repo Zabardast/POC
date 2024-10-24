@@ -9,7 +9,9 @@
 
 #include "keys.c"
 
-#define DEFAULT_SCAN_LIST_SIZE 20
+#include "my_net_tools.c"
+
+#define DEFAULT_SCAN_LIST_SIZE 10
 
 void app_main()
 {
@@ -19,7 +21,7 @@ void app_main()
     //----------------------------------------------------------------
 
     //  Initialize NVS
-
+{
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -59,14 +61,14 @@ void app_main()
 
     // scan networks in the area!!
     printf("start scanning networks : \n");
-    ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, true));
+    esp_wifi_scan_start(NULL, true);
 // return;
     //get results from scan
     uint16_t number = DEFAULT_SCAN_LIST_SIZE;
     wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE] = {0};
     uint16_t ap_count = 0;
     printf("ap_info : %u\n", sizeof(ap_info));
-return;
+// return;
     // memset(ap_info, 0, sizeof(ap_info));
 // return;
     // UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(NULL); // NULL for the current task
@@ -101,14 +103,23 @@ return;
         }
     }
 
-    if(!good_to_connect) return;
-
+    if(!good_to_connect)
+    {
+        printf("No good AP found\n");
+        return;
+    }
+}
     printf("connect to Ap\n");
 
     esp_err_t wf_connection = esp_wifi_connect();
-    printf("Wifi connection result: %i\n", wf_connection);
-
+    printf("Wifi connection result: %s\n", (wf_connection == ESP_OK) ? "ok" : "failed");
+{
     // use IwIp to ping my pc
+    const char *target_ip = "10.0.0.218";
+    send_ping_to_host(target_ip);
+
+
+}
     // make an arp map off all devices on the network.
     // can i see the traffic from other networks ?
     // what does a connection look like ? [Hacking]
