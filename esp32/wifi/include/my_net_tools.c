@@ -89,12 +89,12 @@ void init_station()
         .sta = {
             .ssid = "AP_name",
             .password = "secure_pswd",
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+            .threshold.authmode = WIFI_AUTH_WPA3_PSK,
             .scan_method = WIFI_FAST_SCAN,
-            // .pmf_cfg = {
-            //     .capable = true,
-            //     .required = true
-            // },
+            .pmf_cfg = {
+                .capable = true,
+                .required = true
+            },
             // .bssid_set = false,
             // .channel = 6
         },
