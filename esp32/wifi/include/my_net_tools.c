@@ -87,14 +87,29 @@ void init_station()
     // better to populate it now because its a pain to edit // like with strncpy() or something
     wifi_config_t n_wifi_config = {
         .sta = {
-            .ssid = {*AP_name},
-            .password = {*pswd},
-            .threshold.authmode = WIFI_AUTH_WPA3_PSK,
+            .ssid = "AP_name",
+            .password = "secure_pswd",
+            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
             .scan_method = WIFI_FAST_SCAN,
-            .bssid_set = false,
-            .channel = 6
+            // .pmf_cfg = {
+            //     .capable = true,
+            //     .required = true
+            // },
+            // .bssid_set = false,
+            // .channel = 6
         },
     };
+
+    // wifi_config_t n_wifi_config = {
+    //     .sta = {
+    //         .ssid = {*AP_name},
+    //         .password = {*pswd},
+    //         .threshold.authmode = WIFI_AUTH_WPA3_PSK,
+    //         .scan_method = WIFI_FAST_SCAN,
+    //         .bssid_set = false,
+    //         .channel = 6
+    //     },
+    // };
 
 
 
@@ -223,7 +238,7 @@ void send_ping_to_host(const char *target_ip) {
     // tcpip_init(tcpip_init_done_fn(&mbox), NULL);
     // tcpip_init();
 
-    esp_netif_init();
+    // esp_netif_init();
     
     //endtst
 

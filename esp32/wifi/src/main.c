@@ -34,8 +34,8 @@ void app_main()
     init_station();
 
     // use IwIp to ping my pc
-    const char *target_ip = "10.0.0.218";
-    send_ping_to_host(target_ip);
+    // const char *target_ip = "10.0.0.218";
+    // send_ping_to_host(target_ip);
 
 
     // make an arp map off all devices on the network.
