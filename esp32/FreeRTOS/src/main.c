@@ -21,6 +21,8 @@ void app_main()
     // priority_threads();
 
     // run sensor data processing example
-    sensor();
+    // sensor();
+
+    // run 
 
 }

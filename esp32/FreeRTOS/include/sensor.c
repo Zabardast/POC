@@ -1,4 +1,5 @@
 // demonstrate sensor data usage from multiple tasks
+//FYI storing data in a int instead of using a queue exposes the system to datapoint loss.
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
