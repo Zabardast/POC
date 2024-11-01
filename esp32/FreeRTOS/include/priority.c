@@ -1,9 +1,7 @@
-// #include <stdio.h>
+// demonstrate thread priority
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-// #include "esp_system.h"
 
 void print_hello()
 {
@@ -31,7 +29,10 @@ void print_priority()
 
 void priority_threads()
 {
-    xTaskCreatePinnedToCore(print_hello, "hello", 2048, NULL, 1, NULL, APP_CPU_NUM);
+    // demonstrate multi core specificity
+    // xTaskCreate(print_hello, "hello", 2048, NULL, 1, NULL);
+    // xTaskCreate(print_priority, "priority", 2048, NULL, 3, NULL);
 
+    xTaskCreatePinnedToCore(print_hello, "hello", 2048, NULL, 1, NULL, APP_CPU_NUM);
     xTaskCreatePinnedToCore(print_priority, "priority", 2048, NULL, 3, NULL, APP_CPU_NUM);
 }
