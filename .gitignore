@@ -4,3 +4,5 @@ computer_vision/simple_opencv_pixel_walk/build/*
 computer_vision/simple_opencv_pixel_walk/img/*
 esp32/wifi/include/keys.c
 esp32/wifi/.*
+esp32/wifi6/include/keys.c
+esp32/wifi6/.*

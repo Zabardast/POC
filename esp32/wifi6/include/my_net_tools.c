@@ -129,7 +129,7 @@ void init_station()
     esp_err_t wf_result = esp_wifi_start();
 
     printf("Wifi start result: %i\n", wf_result);
-
+/*
     // get dB
     esp_wifi_scan_start(NULL, true);
     
@@ -167,7 +167,7 @@ void init_station()
 
         }
     }
-
+*/
 /*
     // scan networks in the area!!
     printf("start scanning networks : \n");
