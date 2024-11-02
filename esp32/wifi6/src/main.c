@@ -20,7 +20,7 @@ void app_main()
 
     //----------------------------------------------------------------
 
-    //  Initialize NVS
+    // //  Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -30,8 +30,13 @@ void app_main()
 
     //----------------------------------------------------------------
     esp_log_level_set("wifi", ESP_LOG_DEBUG);
+    
     // connect to wifi
-    init_station();
+    // init_station();
+
+
+    // Be an AP
+    init_access_point();
 
     // use IwIp to ping my pc
     // const char *target_ip = "10.0.0.218";

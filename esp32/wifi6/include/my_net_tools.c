@@ -1,14 +1,4 @@
 
-// #include "lwip/sockets.h"
-// #include "lwip/netdb.h"
-// #include "lwip/icmp.h"
-// #include "lwip/ip_addr.h"
-// #include "lwip/tcpip.h"
-// #include "lwip/inet.h"
-// #include "lwip/inet_chksum.h"
-// #include "lwip/err.h"
-// #include "lwip/sys.h"
-
 #include <string.h>
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -23,10 +13,6 @@
 
 #include "esp_wifi.h"
 #include "esp_log.h"
-
-// #include "freertos/FreeRTOS.h"
-// #include "freertos/task.h"
-
 
 
 #define DEFAULT_SCAN_LIST_SIZE 10
@@ -63,7 +49,7 @@ void init_station()
     // initialize wifi
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     printf("esp init: \n");
-    // esp_wifi_init uses NVS in osi_nvs_open() function which seems to be a custom function not meant for users.
+    // esp_wifi_init uses NVS in osi_nvs_open() function which seems to be a private function not meant for users.
     // I can only speculate that esp_wifi_init uses nvs to store configuration information.
     esp_wifi_init(&cfg);
 
@@ -78,21 +64,6 @@ void init_station()
     esp_wifi_set_mode(WIFI_MODE_STA);
 
     // wifi settings for the Station
-    //https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/network/esp_wifi.html?highlight=esp_wifi_set_mode#_CPPv417wifi_sta_config_t
-    // better to populate it now because its a pain to edit // like with strncpy() or something
-    // wifi_config_t n_wifi_config = {
-    //     .sta = {
-    //         .ssid = "AP_name",
-    //         .password = "secure_pswd",
-    //         .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-    //         .scan_method = WIFI_FAST_SCAN,
-    //         .pmf_cfg = {
-    //             .capable = true,
-    //             .required = true
-    //         },
-    //     },
-    // };
-
     wifi_config_t n_wifi_config = {
         .sta = {
             .ssid = AP_name,
@@ -109,117 +80,12 @@ void init_station()
     };
 
 
-
-//bugfix
-    // wifi_country_t wifi_country = {
-    //     .cc = "US",       // Set your country code (e.g., "US" for the United States)
-    //     .schan = 1,
-    //     .nchan = 13,
-    //     .max_tx_power = 20,
-    //     .policy = WIFI_COUNTRY_POLICY_AUTO
-    // };
-    // esp_wifi_set_country(&wifi_country);
-    // esp_wifi_set_ant(WIFI_ANT_MODE_AUTO);
-    // esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11AX);
-//
-
     // needs STA to be initialized
     esp_wifi_set_config(ESP_IF_WIFI_STA, &n_wifi_config);
     // starts wifi from the previous settings
     esp_err_t wf_result = esp_wifi_start();
 
     printf("Wifi start result: %i\n", wf_result);
-/*
-    // get dB
-    esp_wifi_scan_start(NULL, true);
-    
-    //get results from scan
-    uint16_t number = DEFAULT_SCAN_LIST_SIZE;
-    wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE] = {0};
-    uint16_t ap_count = 0;
-    printf("ap_info : %u\n", sizeof(ap_info));
-
-
-    esp_wifi_scan_get_ap_records(&number, ap_info);
-    esp_wifi_scan_get_ap_num(&ap_count);
-
-    // my AP name
-    // char good_to_connect = 0;
-
-    for(int i = 0; i < number; i++)
-    {
-        printf("SSID : %s\n", ap_info[i].ssid);
-        char *uintArrayStr = (char *)ap_info[i].ssid;
-
-        if (!strcmp(uintArrayStr, AP_name))
-        {
-            //mac
-            printf("mac: ");
-            for (int mac_count = 0; mac_count < 6 ;mac_count++)
-            {
-                printf("%x ",ap_info[i].bssid[mac_count]);
-            }
-            printf("\n");
-            printf("sig strength : %d\n", ap_info[i].rssi);
-            // Bon ducoup on va se connecter.
-            // good_to_connect = 1;
-            break;
-
-        }
-    }
-*/
-/*
-    // scan networks in the area!!
-    printf("start scanning networks : \n");
-    esp_wifi_scan_start(NULL, true);
-
-    //get results from scan
-    uint16_t number = DEFAULT_SCAN_LIST_SIZE;
-    wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE] = {0};
-    uint16_t ap_count = 0;
-    printf("ap_info : %u\n", sizeof(ap_info));
-
-
-    esp_wifi_scan_get_ap_records(&number, ap_info);
-    esp_wifi_scan_get_ap_num(&ap_count);
-
-    printf("Found %u AP\n", number);
-
-    // my AP name
-    char good_to_connect = 0;
-
-    for(int i = 0; i < number; i++)
-    {
-        printf("SSID : %s\n", ap_info[i].ssid);
-        char *uintArrayStr = (char *)ap_info[i].ssid;
-
-        if (!strcmp(uintArrayStr, AP_name))
-        {
-            //mac
-            printf("mac: ");
-            for (int mac_count = 0; mac_count < 6 ;mac_count++)
-            {
-                printf("%x ",ap_info[i].bssid[mac_count]);
-            }
-            printf("\n");
-            printf("sig strength : %d\n", ap_info[i].rssi);
-            // Bon ducoup on va se connecter.
-            good_to_connect = 1;
-            break;
-
-        }
-    }
-
-    if(!good_to_connect)
-    {
-        printf("AP not found\n");
-        return;
-    }
-*/
-    // esp_err_t wf_connection = esp_wifi_connect();
-    // printf("Wifi connection result: %s\n", (wf_connection == ESP_OK) ? "good link" : "failed");
-
-
 
 }
 
@@ -228,37 +94,44 @@ void init_access_point()
 {
     // // tmp
 
-    // uint8_t* EXAMPLE_ESP_WIFI_SSID = "esp_wifi_ssid";
-    // uint8_t* EXAMPLE_ESP_WIFI_PASS = "super_pswd";
-    // uint8_t EXAMPLE_ESP_WIFI_CHANNEL = 6;
-    // uint8_t EXAMPLE_MAX_STA_CONN = 5;
 
     // //
-    // esp_netif_init();
-    // esp_netif_create_default_wifi_ap();
+    esp_netif_init();
+    esp_event_loop_create_default();
+
+    esp_netif_create_default_wifi_ap();
 
     // // esp_event_loop_create_default();
 
-    // wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    // esp_wifi_init(&cfg);
-    // esp_wifi_set_mode(WIFI_MODE_AP);
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    esp_wifi_init(&cfg);
 
-    // wifi_config_t wifi_config = {
-    //     .ap = {
-    //         .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
-    //         .channel = EXAMPLE_ESP_WIFI_CHANNEL,
-    //         .max_connection = EXAMPLE_MAX_STA_CONN,
-    //         .authmode = WIFI_AUTH_WPA_WPA2_PSK
-    //     },
-    // };
-    // strlcpy(wifi_config.ap.ssid, EXAMPLE_ESP_WIFI_SSID, sizeof(wifi_config.ap.ssid));
-    // strlcpy(wifi_config.ap.password, EXAMPLE_ESP_WIFI_PASS, sizeof(wifi_config.ap.password));
-    // if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {
-    //     wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-    // }
-    // esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
 
-    // esp_wifi_start();
+
+    // setup the wifi handlers to manage connections to the AP
+
+
+    // esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, NULL);
+
+    esp_wifi_set_mode(WIFI_MODE_AP);
+
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
+            .ssid = EXAMPLE_ESP_WIFI_SSID,
+            .password = EXAMPLE_ESP_WIFI_PASS,
+            .channel = EXAMPLE_ESP_WIFI_CHANNEL,
+            .max_connection = EXAMPLE_MAX_STA_CONN,
+            .authmode = WIFI_AUTH_WPA2_PSK
+        },
+    };
+    
+    if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {
+        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    }
+    esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+
+    esp_wifi_start();
 }
 
 void send_ping_to_host(const char *target_ip) {
