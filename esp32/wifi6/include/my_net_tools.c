@@ -10,6 +10,7 @@
 #include "lwip/ip_addr.h" // Include this header for IP4_ADDR
 #include "lwip/tcpip.h"
 
+#include "lwip/opt.h"
 
 #include "esp_wifi.h"
 #include "esp_log.h"
@@ -18,7 +19,7 @@
 #define DEFAULT_SCAN_LIST_SIZE 10
 
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+static void wifi_station_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         printf("esp_wifi_connect : %i\n",esp_wifi_connect());
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
@@ -33,6 +34,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
         // Now you can send packets, as the IP address is assigned
     }
 }
+
+
 
 void init_station()
 {
@@ -54,8 +57,8 @@ void init_station()
     esp_wifi_init(&cfg);
 
     // add event handler for wifi and ip address change
-    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL);
-    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL);
+    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_station_event_handler, NULL);
+    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_station_event_handler, NULL);
 
 
     // set wifi mode to station (could be considered as a client where [Access Point]----->[station] the master or the provider is the AP)
@@ -66,8 +69,8 @@ void init_station()
     // wifi settings for the Station
     wifi_config_t n_wifi_config = {
         .sta = {
-            .ssid = AP_name,
-            .password = pswd,
+            .ssid = AP_NAME,
+            .password = PSWD,
             .threshold.authmode = WIFI_AUTH_WPA3_PSK,
             .scan_method = WIFI_FAST_SCAN,
             .pmf_cfg = {
@@ -133,6 +136,61 @@ void init_access_point()
 
     esp_wifi_start();
 }
+
+
+void init_AP_STA()
+{
+    // first the sta to connect to provider AP
+    esp_netif_init();
+    esp_event_loop_create_default();
+
+    esp_netif_create_default_wifi_sta();
+
+    //setup
+    // STA
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    esp_wifi_init(&cfg);
+
+    esp_wifi_set_mode(WIFI_MODE_APSTA);
+
+    //config
+    wifi_config_t wifi_config_sta = {
+        .sta = {
+            .ssid = AP_NAME,
+            .password = PSWD,
+        },
+    };
+    esp_wifi_set_config(WIFI_IF_STA, &wifi_config_sta);
+
+    esp_err_t sta_result = esp_wifi_start();
+
+    printf("Wifi start result: %i\n", sta_result);
+
+    esp_wifi_connect();
+
+    // AP
+    esp_netif_create_default_wifi_ap();
+
+    wifi_config_t wifi_config_ap = {
+        .ap = {
+            .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
+            .ssid = EXAMPLE_ESP_WIFI_SSID,
+            .password = EXAMPLE_ESP_WIFI_PASS,
+            .channel = EXAMPLE_ESP_WIFI_CHANNEL,
+            .max_connection = EXAMPLE_MAX_STA_CONN,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+        },
+    };
+    esp_wifi_set_config(WIFI_IF_AP, &wifi_config_ap);
+
+    esp_err_t ap_result = esp_wifi_start();
+
+    printf("Wifi start result: %i\n", ap_result);
+}
+
+
+void ip_forwarding() // or nat ???
+{}
 
 void send_ping_to_host(const char *target_ip) {
     printf("send_ping_to_host\n");

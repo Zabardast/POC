@@ -31,12 +31,16 @@ void app_main()
     //----------------------------------------------------------------
     esp_log_level_set("wifi", ESP_LOG_DEBUG);
     
-    // connect to wifi
+    // Be a STA
     // init_station();
 
 
-    // Be an AP
-    init_access_point();
+    // Be a AP
+    // init_access_point();
+
+
+    // Be a AP_STA with ip forwarding
+    init_AP_STA();
 
     // use IwIp to ping my pc
     // const char *target_ip = "10.0.0.218";
