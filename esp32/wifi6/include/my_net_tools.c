@@ -1,19 +1,47 @@
 
 #include <string.h>
+#include "nvs_flash.h"
+
+#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "nvs_flash.h"
 #include "esp_netif.h"
 
 
 #include "lwip/init.h"
 #include "lwip/ip_addr.h" // Include this header for IP4_ADDR
 #include "lwip/tcpip.h"
+#include "lwip/lwip_napt.h"
 
 #include "lwip/opt.h"
 
 #include "esp_wifi.h"
 #include "esp_log.h"
+
+//
+
+#include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_wpa2.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "driver/gpio.h"
+#include "lwip/opt.h"
+
+#if IP_NAPT
+#include "lwip/lwip_napt.h"
+#endif
+
+#include "lwip/err.h"
+#include "lwip/sys.h"
+
+//
+#include "nat.c"
 
 
 #define DEFAULT_SCAN_LIST_SIZE 10
@@ -182,6 +210,11 @@ void init_AP_STA()
         },
     };
     esp_wifi_set_config(WIFI_IF_AP, &wifi_config_ap);
+
+
+    // set dns??
+    // dhcps_set_option_info( );
+
 
     esp_err_t ap_result = esp_wifi_start();
 
