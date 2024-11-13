@@ -42,13 +42,5 @@ void app_main()
     // Be a AP_STA with ip forwarding
     init_AP_STA();
 
-    // use IwIp to ping my pc
-    // const char *target_ip = "10.0.0.218";
-    // send_ping_to_host(target_ip);
-
-
-    // make an arp map off all devices on the network.
-    // can i see the traffic from other networks ?
-    // what does a connection look like ? [Hacking]
-    // can i transform my esp32 into a wifi extender for wpa3 ???[legit github project]
+    // ip_forwarding();
 }

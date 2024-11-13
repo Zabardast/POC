@@ -12,6 +12,7 @@
 #include "lwip/ip_addr.h" // Include this header for IP4_ADDR
 #include "lwip/tcpip.h"
 #include "lwip/lwip_napt.h"
+#include "lwip/sockets.h"
 
 #include "lwip/opt.h"
 
@@ -26,19 +27,24 @@
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_wpa2.h"
+// #include "esp_wpa2.h" // deprecated
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 #include "lwip/opt.h"
 
-#if IP_NAPT
-#include "lwip/lwip_napt.h"
-#endif
+
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
+
+// enable ip forwarding and napt in menuconfig
+// #ifdef IP_NAPT
+#include "lwip/lwip_napt.h"
+// #endif
+
+#include "lwip/ip4_napt.h"
 
 //
 #include "nat.c"
@@ -46,6 +52,7 @@
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 
+void ip_forwarding();
 
 static void wifi_station_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -60,6 +67,8 @@ static void wifi_station_event_handler(void* arg, esp_event_base_t event_base, i
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         printf("Connected! Got IP: " IPSTR "\n", IP2STR(&event->ip_info.ip));
         // Now you can send packets, as the IP address is assigned
+        // setup nat
+        ip_forwarding(event->ip_info.ip);
     }
 }
 
@@ -73,7 +82,7 @@ void init_station()
     esp_event_loop_create_default();
 
 // Set up the Wi-Fi station interface
-    esp_netif_t *netif = esp_netif_create_default_wifi_sta();
+    esp_netif_create_default_wifi_sta();
 
     //end new
 
@@ -172,12 +181,18 @@ void init_AP_STA()
     esp_netif_init();
     esp_event_loop_create_default();
 
-    esp_netif_create_default_wifi_sta();
-
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
     //setup
     // STA
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_wifi_init(&cfg);
+
+    // add event handler for wifi and ip address change
+    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_station_event_handler, NULL);
+    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_station_event_handler, NULL);
+
+    esp_netif_set_hostname(sta_netif, "STA_HANDLE");
 
     esp_wifi_set_mode(WIFI_MODE_APSTA);
 
@@ -192,7 +207,7 @@ void init_AP_STA()
 
     esp_err_t sta_result = esp_wifi_start();
 
-    printf("Wifi start result: %i\n", sta_result);
+    printf("Wifi start sta result: %i\n", sta_result);
 
     esp_wifi_connect();
 
@@ -211,79 +226,36 @@ void init_AP_STA()
     };
     esp_wifi_set_config(WIFI_IF_AP, &wifi_config_ap);
 
-
-    // set dns??
-    // dhcps_set_option_info( );
-
-
     esp_err_t ap_result = esp_wifi_start();
 
-    printf("Wifi start result: %i\n", ap_result);
+    printf("Wifi start ap result: %i\n", ap_result);
+
 }
 
 
-void ip_forwarding() // or nat ???
-{}
+void ip_forwarding(struct esp_ip4_addr p_addr) // or nat ???
+{
+    printf("ip_forwarding yo\n");
+    // initial aproach ->> ip_napt_forward()
 
-void send_ping_to_host(const char *target_ip) {
-    printf("send_ping_to_host\n");
-    // struct sockaddr_in addr;
-    //tst
-    // sys_mbox_t mbox;
-    // sys_mbox_new(&mbox,20);
+    ip_napt_enable(p_addr.addr, 1); // doesn't work lol
+
+    // esp_netif_t * netif_sta = esp_netif_get_handle_from_ifkey("STA_HANDLE");
+
+    // printf("va1\n");
+    // // Get the IP address of the STA interface
+    // esp_netif_ip_info_t ip_info;
+    // esp_netif_get_ip_info(netif_sta, &ip_info);
+
+    // printf("va2\n");
+    // Enable NAPT on the STA IP address
+    // ip_napt_enable(ip_info.ip.addr, 1);
+
     
-    // tcpip_init_done_fn(mbox);
-    // tcpip_init(tcpip_init_done_fn(&mbox), NULL);
-    // tcpip_init();
 
-    // esp_netif_init();
-    
-    //endtst
-
-
-
-    // int sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-    // int sock = socket(AF_INET, SOCK_STREAM, 0);
-    // if (sock < 0) {
-    //     ESP_LOGE("PING", "Failed to create socket");
-    //     return;
-    // }
-
-    printf("memset(&addr, 0, sizeof(addr));\n");
-    // memset(&addr, 0, sizeof(addr));
-    // addr.sin_family = AF_INET;
-    // addr.sin_addr.s_addr = inet_addr(target_ip);
-
-    // char packet[64];
-    // struct icmp_echo_hdr *icmp_hdr = (struct icmp_echo_hdr *)packet;
-    // icmp_hdr->type = ICMP_ECHO;
-    // icmp_hdr->code = 0;
-    // icmp_hdr->id = htons(1);
-    // icmp_hdr->seqno = htons(1);
-    // icmp_hdr->chksum = 0;
-    // icmp_hdr->chksum = inet_chksum(packet, sizeof(packet));
-
-    // printf("sendto : -> \n");
-    // if (sendto(sock, packet, sizeof(packet), 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-    //     ESP_LOGE("PING", "Failed to send ping request");
-    // } else {
-    //     ESP_LOGI("PING", "Ping request sent to %s", target_ip);
-    // }
-
-    // // Receive the pong response
-    // char recv_packet[64];
-    // socklen_t addr_len = sizeof(addr);
-    // int received_bytes = recvfrom(sock, recv_packet, sizeof(recv_packet), 0, (struct sockaddr *)&addr, &addr_len);
-    // if (received_bytes < 0) {
-    //     ESP_LOGE("PING", "Failed to receive pong response");
-    // } else {
-    //     struct icmp_echo_hdr *recv_icmp_hdr = (struct icmp_echo_hdr *)recv_packet;
-    //     if (recv_icmp_hdr->type == ICMP_ER && recv_icmp_hdr->code == 0) {
-    //         ESP_LOGI("PING", "Pong received from %s", inet_ntoa(addr.sin_addr));
-    //     } else {
-    //         ESP_LOGW("PING", "Received non-pong ICMP packet");
-    //     }
-    // }
-
-    // close(sock);
 }
+
+// void send_ping_to_host(const char *target_ip)
+// {
+//     printf("send_ping_to_host\n");
+// }
