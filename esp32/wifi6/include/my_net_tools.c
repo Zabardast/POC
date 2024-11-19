@@ -1,3 +1,5 @@
+#include "esp_netif.h"
+
 
 #include <string.h>
 #include "nvs_flash.h"
@@ -52,6 +54,8 @@
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 
+static const char *NAPT = "ip_forwarding";
+
 void ip_forwarding();
 void start_ping();
 
@@ -83,8 +87,20 @@ void wifi_station_event_handler(void* arg, esp_event_base_t event_base, int32_t 
         printf("start ip forwarding\n");
         ip_forwarding(ip_event_data->ip_info.ip);
 
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
+        printf("event IP_EVENT_AP_STAIPASSIGNED\n");
+
+        ip_event_got_ip_t* ip_event_data = (ip_event_got_ip_t*) event_data;
+
+        // ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(&ip_event_data));
+
     }
 }
+
+
+#include "esp_netif.h"
+#include "esp_wifi.h"
+#include "esp_mac.h"
 
 void wifi_sta_ap_event_ip_forwarding(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
@@ -93,7 +109,39 @@ void wifi_sta_ap_event_ip_forwarding(void* arg, esp_event_base_t event_base, int
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
         printf("event ap sta connected!\n");
 
+        // wifi_event_ap_staconnected_t
+        // ip_event_got_ip_t
+
+        wifi_event_ap_staconnected_t* ip_event_data = (wifi_event_ap_staconnected_t*) event_data;
+
+        // Get the list of connected stations
+        wifi_sta_list_t wifi_sta_list;
+        // esp_netif_sta_list_t netif_sta_list;
+
+
+        // tcpip_adapter_get_sta_list(wifi_sta_list, );
+//
+        // if (esp_wifi_ap_get_sta_list(&wifi_sta_list) == ESP_OK)
+        // {
+        //     if(wifi_sta_list.num > 0)
+        //     {
+        //         // wifi_sta_list->sta[0].mac
+        //         wifi_sta_info_t *sta = &wifi_sta_list.sta[0];
+        //         ESP_LOGI(NAPT, "Device %d: MAC:"MACSTR", RSSI: %d", 0, MAC2STR(sta->mac), sta->rssi);
+        //     }
+        // }
+//
+
+        // ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(&ip_event_data));
+
+        // ip_forwarding(ip_event_data.ip_info.ip);
+
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
+        printf("event IP_EVENT_AP_STAIPASSIGNED\n");
+
         ip_event_got_ip_t* ip_event_data = (ip_event_got_ip_t*) event_data;
+
+        // ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(ip_event_data->ip_info.ip.addr));
 
         ip_forwarding(ip_event_data->ip_info.ip);
 
@@ -246,7 +294,7 @@ void init_AP_STA()
     esp_wifi_connect();
 
     // AP
-    esp_netif_create_default_wifi_ap();
+     esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
 
     wifi_config_t wifi_config_ap = {
         .ap = {
@@ -264,9 +312,18 @@ void init_AP_STA()
 
     printf("Wifi start ap result: %i\n", ap_result);
 
+    ///
+
+    // esp_netif_dhcps_register_cb(ap_netif, dhcp_offer_callback);
+
+    // esp_err_t hre = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &wifi_sta_ap_event_ip_forwarding, NULL);
+    // if (hre != ESP_OK)
+    // {
+    //     printf("Failed to register event handler\n");
+    // }
+
 }
 
-static const char *NAPT = "ip_forwarding";
 
 void ip_forwarding(struct esp_ip4_addr p_addr) // or nat ???
 {
@@ -275,7 +332,7 @@ void ip_forwarding(struct esp_ip4_addr p_addr) // or nat ???
 
     ESP_LOGI(NAPT, "enable ip_napt for address " IPSTR, IP2STR(&p_addr));
 
-    ip_napt_enable(p_addr.addr, 1); // doesn't work lol
+    // ip_napt_enable(p_addr.addr, 1); // doesn't work lol
 
     // printf("ip_napt_enabled for address %i\n", IP2STR(&p_addr.addr));
     ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(&p_addr));
@@ -286,10 +343,13 @@ void ip_forwarding(struct esp_ip4_addr p_addr) // or nat ???
     // // Get the IP address of the STA interface
     // esp_netif_ip_info_t ip_info;
     // esp_netif_get_ip_info(netif_sta, &ip_info);
+    // heap_caps_defragment(MALLOC_CAP_32BIT);
 
-    // printf("va2\n");
+    heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+
+    printf("va2\n");
     // Enable NAPT on the STA IP address
-    // ip_napt_enable(ip_info.ip.addr, 1);
+    ip_napt_enable(p_addr.addr, 1);
 
     
 
