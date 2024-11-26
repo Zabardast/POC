@@ -53,221 +53,76 @@
 
 
 #define DEFAULT_SCAN_LIST_SIZE 10
-
+static const char *STA_WIFI = "wifi STA";
 static const char *NAPT = "ip_forwarding";
 
+#include <sys/socket.h>
+static const char *STA_wireshark = "tcp for wireshark";
+#define PORT 4242
+
 void ip_forwarding();
-void start_ping();
-
-//static 
-void wifi_station_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        printf("esp_wifi_connect : %i\n",esp_wifi_connect());
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        wifi_event_sta_disconnected_t* event = (wifi_event_sta_disconnected_t*) event_data;
-        printf("Disconnected from Wi-Fi, reason: %d\n", event->reason);
-
-        printf("esp_wifi_connect : %i\n",esp_wifi_connect());
-        printf("Disconnected from Wi-Fi, retrying...\n");
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        printf("Connected! Got IP: " IPSTR "\n", IP2STR(&event->ip_info.ip));
-        // Now you can send packets, as the IP address is assigned
-
-        // try the ping before nat
-        // start_ping();
-
-        // setup nat
-        ip_forwarding(event->ip_info.ip);
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
-        printf("Connected!");
-
-        ip_event_got_ip_t* ip_event_data = (ip_event_got_ip_t*) event_data;
-
-        printf("start ip forwarding\n");
-        ip_forwarding(ip_event_data->ip_info.ip);
-
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
-        printf("event IP_EVENT_AP_STAIPASSIGNED\n");
-
-        ip_event_got_ip_t* ip_event_data = (ip_event_got_ip_t*) event_data;
-
-        // ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(&ip_event_data));
-
-    }
-}
-
+void initialize_ping();
 
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_mac.h"
 
+
+void wifi_sta_lost_ip(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    printf("ip forwarding event\n");
+
+    if(event_base == IP_EVENT && event_id == IP_EVENT_STA_LOST_IP)
+    {
+        // reconnect
+        printf("esp_wifi_connect : %i\n",esp_wifi_connect());
+    }
+}
+
+
+void ip_forwarding(struct esp_ip4_addr p_addr) // or nat ???
+{
+    printf("ip_forwarding\n");
+
+    // debug ?? TODO: remove this
+    // heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+
+    ESP_LOGI(NAPT, "enable ip_napt for address " IPSTR, IP2STR(&p_addr));
+    // printf("ip address: %i\n", (int)p_addr.addr);
+
+    // Enable NAPT on the STA IP address
+    ip_napt_enable(p_addr.addr, 1);
+
+    ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(&p_addr));
+    
+}
+
 void wifi_sta_ap_event_ip_forwarding(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     printf("ip forwarding event\n");
 
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
-        printf("event ap sta connected!\n");
-
-        // wifi_event_ap_staconnected_t
-        // ip_event_got_ip_t
-
-        wifi_event_ap_staconnected_t* ip_event_data = (wifi_event_ap_staconnected_t*) event_data;
-
-        // Get the list of connected stations
-        wifi_sta_list_t wifi_sta_list;
-        // esp_netif_sta_list_t netif_sta_list;
-
-
-        // tcpip_adapter_get_sta_list(wifi_sta_list, );
-//
-        // if (esp_wifi_ap_get_sta_list(&wifi_sta_list) == ESP_OK)
-        // {
-        //     if(wifi_sta_list.num > 0)
-        //     {
-        //         // wifi_sta_list->sta[0].mac
-        //         wifi_sta_info_t *sta = &wifi_sta_list.sta[0];
-        //         ESP_LOGI(NAPT, "Device %d: MAC:"MACSTR", RSSI: %d", 0, MAC2STR(sta->mac), sta->rssi);
-        //     }
-        // }
-//
-
-        // ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(&ip_event_data));
-
-        // ip_forwarding(ip_event_data.ip_info.ip);
-
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
-        printf("event IP_EVENT_AP_STAIPASSIGNED\n");
+    if(event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
+    {
+        printf("event IP_EVENT_STA_GOT_IP\n");
 
         ip_event_got_ip_t* ip_event_data = (ip_event_got_ip_t*) event_data;
 
-        // ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(ip_event_data->ip_info.ip.addr));
-
+        printf("frw ip : \n");
         ip_forwarding(ip_event_data->ip_info.ip);
 
+        // printf("frw gw : \n");
+        // ip_forwarding(ip_event_data->ip_info.gw);
+        // initialize_ping();
     }
 }
-
-
-
-void init_station()
-{
-    //new
-// Initialize the network interface
-    esp_netif_init();
-    esp_event_loop_create_default();
-
-// Set up the Wi-Fi station interface
-    esp_netif_create_default_wifi_sta();
-
-    //end new
-
-    // initialize wifi
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    printf("esp init: \n");
-    // esp_wifi_init uses NVS in osi_nvs_open() function which seems to be a private function not meant for users.
-    // I can only speculate that esp_wifi_init uses nvs to store configuration information.
-    esp_wifi_init(&cfg);
-
-    // add event handler for wifi and ip address change
-    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_station_event_handler, NULL);
-    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_station_event_handler, NULL);
-
-
-    // set wifi mode to station (could be considered as a client where [Access Point]----->[station] the master or the provider is the AP)
-    // enables STA mode (can be considered an interface)
-    printf("Setting wifi mode/interface:\n");
-    esp_wifi_set_mode(WIFI_MODE_STA);
-
-    // wifi settings for the Station
-    wifi_config_t n_wifi_config = {
-        .sta = {
-            .ssid = AP_NAME,
-            .password = PSWD,
-            .threshold.authmode = WIFI_AUTH_WPA3_PSK,
-            .scan_method = WIFI_FAST_SCAN,
-            .pmf_cfg = {
-                .capable = true,
-                .required = true
-            },
-            // .bssid_set = false,
-            // .channel = 6
-        },
-    };
-
-
-    // needs STA to be initialized
-    esp_wifi_set_config(ESP_IF_WIFI_STA, &n_wifi_config);
-    // starts wifi from the previous settings
-    esp_err_t wf_result = esp_wifi_start();
-
-    printf("Wifi start result: %i\n", wf_result);
-
-}
-
-
-void init_access_point()
-{
-    // // tmp
-
-
-    // //
-    esp_netif_init();
-    esp_event_loop_create_default();
-
-    esp_netif_create_default_wifi_ap();
-
-    // // esp_event_loop_create_default();
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&cfg);
-
-
-
-    // setup the wifi handlers to manage connections to the AP
-
-
-    // esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, NULL);
-
-    esp_wifi_set_mode(WIFI_MODE_AP);
-
-    wifi_config_t wifi_config = {
-        .ap = {
-            .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
-            .ssid = EXAMPLE_ESP_WIFI_SSID,
-            .password = EXAMPLE_ESP_WIFI_PASS,
-            .channel = EXAMPLE_ESP_WIFI_CHANNEL,
-            .max_connection = EXAMPLE_MAX_STA_CONN,
-            .authmode = WIFI_AUTH_WPA2_PSK
-        },
-    };
-    
-    if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {
-        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-    }
-    esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
-
-    esp_wifi_start();
-}
-
 
 void init_AP_STA()
 {
     // first the sta to connect to provider AP
     esp_netif_init();
-    
-    // esp_err_t crel_err = esp_event_loop_create_default();
-    // if(crel_err != ESP_OK)
-    // {
-    //     printf("failed to create event loop");
-    // }
-
-    // add event handler for wifi and ip address change
-    // esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_station_event_handler, NULL);
-    // esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_station_event_handler, NULL);
-    // esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &wifi_station_event_handler, NULL);
 
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    // esp_netif_napt_enable(sta_netif);
     assert(sta_netif);
     //setup
     // STA
@@ -291,10 +146,16 @@ void init_AP_STA()
 
     printf("Wifi start sta result: %i\n", sta_result);
 
-    esp_wifi_connect();
+    esp_err_t sta_connect = esp_wifi_connect();
+    if(sta_connect == ESP_OK)
+    {
+        ESP_LOGI(STA_WIFI, "Wifi sta connected successfully\n");
+    }else{
+        ESP_LOGI(STA_WIFI, "Wifi sta failed to connect\n");
+    }
 
     // AP
-     esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
+    esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
 
     wifi_config_t wifi_config_ap = {
         .ap = {
@@ -311,141 +172,171 @@ void init_AP_STA()
     esp_err_t ap_result = esp_wifi_start();
 
     printf("Wifi start ap result: %i\n", ap_result);
+// TODO: remove the following 
+    esp_err_t enab_nat_err = esp_netif_napt_enable(ap_netif);
+    if (enab_nat_err == ESP_OK) {
+        ESP_LOGI("NAPT", "NAPT successfully enabled");
+    } else {
+        ESP_LOGE("NAPT", "Failed to enable NAPT: %s", esp_err_to_name(enab_nat_err));
+    }
 
-    ///
+// ESP32 STATION
 
-    // esp_netif_dhcps_register_cb(ap_netif, dhcp_offer_callback);
+    // int addr_family = 0;
+    // int ip_protocol = 0;
+    // char rx_buffer[128];
+    // char host_ip[] = "10.0.0.218";
 
-    // esp_err_t hre = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &wifi_sta_ap_event_ip_forwarding, NULL);
-    // if (hre != ESP_OK)
-    // {
-    //     printf("Failed to register event handler\n");
-    // }
+    // struct sockaddr_in dest_addr;
+    // inet_pton(AF_INET, host_ip, &dest_addr.sin_addr);
+    // dest_addr.sin_family = AF_INET;
+    // dest_addr.sin_port = htons(PORT);
+    // addr_family = AF_INET;
+    // ip_protocol = IPPROTO_IP;
+
+    char *payload = "Message from ESP32 ";
+
+    printf("entering the for(;;) loop\n");
+
+    int sock = socket(AF_INET, SOCK_RAW, htons(0x806));
+    if (sock < 0) {
+        perror("socket");
+        // return 1;
+    }
+
+    struct sockaddr_in src_addr;
+    src_addr.sin_family = AF_INET;
+    src_addr.sin_port = htons(0);
+    inet_aton("10.0.0.218", &src_addr.sin_addr);
+
+    //get mac
+    // struct sockaddr_ll src_mac;
+    // src_mac.sll_family = AF_LINK;
+    // src_mac.sll_protocol = htons(0x0806);
+    // Set your own MAC address here
+
+    uint8_t mac[6];
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
+
+    struct arp_header_t {
+        uint16_t htype;
+        uint16_t hlen;
+        uint8_t opcode;
+        uint8_t sender_ip[4];
+        uint8_t sender_mac[6];
+        uint8_t target_ip[4];
+        uint8_t target_mac[6];
+    }arp_header;
+
+    // arp_header arp;
+    // arp_header.htype = htons(1); // Ethernet
+    // arp_header.hlen = htons(6); // Ethernet header length
+    // arp_header.opcode = TWT_REQUEST;
+    // memcpy(arp_header.sender_ip, "10.0.0.153", 4);
+    // memcpy(arp_header.sender_mac, mac, 6);
+    // memcpy(arp_header.target_ip, ARP_TARGET_IP, 4);
+    // memcpy(arp_header.target_mac, ARP_TARGET_MAC, 6);
+
+    // char* packet = (char*)&arp;
+    // int packet_len = sizeof(arp);
+
+    // sendto(sock, packet, packet_len, 0, (struct sockaddr*)&src_addr, sizeof(src_addr));
+
+    // close(sock);
 
 }
 
 
-void ip_forwarding(struct esp_ip4_addr p_addr) // or nat ???
-{
-    printf("ip_forwarding\n");
-    // initial aproach ->> ip_napt_forward()
-
-    ESP_LOGI(NAPT, "enable ip_napt for address " IPSTR, IP2STR(&p_addr));
-
-    // ip_napt_enable(p_addr.addr, 1); // doesn't work lol
-
-    // printf("ip_napt_enabled for address %i\n", IP2STR(&p_addr.addr));
-    ESP_LOGI(NAPT, "ip_napt_enabled for address " IPSTR, IP2STR(&p_addr));
-
-    // esp_netif_t * netif_sta = esp_netif_get_handle_from_ifkey("STA_HANDLE");
-
-    // printf("va1\n");
-    // // Get the IP address of the STA interface
-    // esp_netif_ip_info_t ip_info;
-    // esp_netif_get_ip_info(netif_sta, &ip_info);
-    // heap_caps_defragment(MALLOC_CAP_32BIT);
-
-    heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
-
-    printf("va2\n");
-    // Enable NAPT on the STA IP address
-    ip_napt_enable(p_addr.addr, 1);
-
-    
-
-}
+////////////////////////////////////////////////////////////////
 
 #include "ping/ping_sock.h"
+#include <string.h>
+// #include "sdkconfig.h"
+#include "esp_console.h"
 
-static const char *TAG = "8.8.8.8";
+#include <stdio.h>
+#include <string.h>
+#include "sdkconfig.h"
+#include "lwip/inet.h"
+#include "lwip/netdb.h"
+#include "lwip/sockets.h"
+#include "esp_event.h"
 
-// Callback function to handle ping results
-static void ping_results(esp_ping_handle_t *pf, void *args) {
-    uint32_t elapsed_time;
-    ip4_addr_t target_addr;
+#include "nvs_flash.h"
+#include "argtable3/argtable3.h"
+// #include "protocol_examples_common.h"
+#include "ping/ping_sock.h"
+
+static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
+{
+    // optionally, get callback arguments
+    // const char* str = (const char*) args;
+    // printf("%s\r\n", str); // "foo"
     uint8_t ttl;
-
-    esp_log_level_set("wifi", ESP_LOG_DEBUG);
-    esp_log_level_set("ping", ESP_LOG_DEBUG);
-    
-    printf("start ping results\n");
-    // Get the ping response details
-    // Check TIMEGAP (elapsed time)
-    if (esp_ping_get_profile(*pf, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time)) == ESP_OK) {
-        ESP_LOGI(TAG, "Ping time=%d ms", (int)elapsed_time);
-    } else {
-        ESP_LOGE(TAG, "Failed to retrieve ESP_PING_PROF_TIMEGAP");
-    }
-
-    // Check IPADDR (target address)
-    if (esp_ping_get_profile(*pf, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr)) == ESP_OK) {
-        ESP_LOGI(TAG, "Ping target IP=" IPSTR, IP2STR(&target_addr));
-    } else {
-        ESP_LOGE(TAG, "Failed to retrieve ESP_PING_PROF_IPADDR");
-    }
-
-    // Check TTL
-    if (esp_ping_get_profile(*pf, ESP_PING_PROF_TTL, &ttl, sizeof(ttl)) == ESP_OK) {
-        ESP_LOGI(TAG, "Ping TTL=%d", ttl);
-    } else {
-        ESP_LOGE(TAG, "Failed to retrieve ESP_PING_PROF_TTL");
-    }
-
-
-    ESP_LOGI(TAG, "Ping reply from " IPSTR ": time=%u ms, ttl=%u",
-             IP2STR(&target_addr), (int)elapsed_time, (int)ttl);
+    uint16_t seqno;
+    uint32_t elapsed_time, recv_len;
+    ip_addr_t target_addr;
+    esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_TTL, &ttl, sizeof(ttl));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
+    printf("%li bytes from %s icmp_seq=%d ttl=%d time=%li ms\n",
+           recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
 }
 
-void start_ping() {
-    // Set up ping target
+static void test_on_ping_timeout(esp_ping_handle_t hdl, void *args)
+{
+    uint16_t seqno;
     ip_addr_t target_addr;
-    ipaddr_aton("8.8.8.8", &target_addr);
+    esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
+    printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), seqno);
+}
 
-    // Configure the ping parameters
+static void test_on_ping_end(esp_ping_handle_t hdl, void *args)
+{
+    uint32_t transmitted;
+    uint32_t received;
+    uint32_t total_time_ms;
+
+    esp_ping_get_profile(hdl, ESP_PING_PROF_REQUEST, &transmitted, sizeof(transmitted));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &received, sizeof(received));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
+    printf("%li packets transmitted, %li received, time %lims\n", transmitted, received, total_time_ms);
+}
+
+void initialize_ping()
+{
+    /* convert URL to IP address */
+    ip_addr_t target_addr;
+    struct addrinfo hint;
+    struct addrinfo *res = NULL;
+    memset(&hint, 0, sizeof(hint));
+    memset(&target_addr, 0, sizeof(target_addr));
+    // getaddrinfo("www.espressif.com", NULL, &hint, &res);
+
+    getaddrinfo("www.espressif.com", NULL, &hint, &res);
+    struct in_addr addr4 = ((struct sockaddr_in *) (res->ai_addr))->sin_addr;
+    inet_addr_to_ip4addr(ip_2_ip4(&target_addr), &addr4);
+    freeaddrinfo(res);
+
     esp_ping_config_t ping_config = ESP_PING_DEFAULT_CONFIG();
-    ping_config.target_addr = target_addr;
-    ping_config.count = 4;  // Number of ping attempts
+    ping_config.target_addr = target_addr;          // target IP address
+    ping_config.count = ESP_PING_COUNT_INFINITE;    // ping in infinite mode, esp_ping_stop can stop it
+    ping_config.interface = 1;
 
-    // Set up callback for ping response
-    esp_ping_callbacks_t cbs = {
-        .cb_args = NULL,
-        .on_ping_success = ping_results,  // Called on each successful ping
-        .on_ping_end = ping_results,      // Called when pinging ends
-    };
+    /* set callback functions */
+    esp_ping_callbacks_t cbs;
+    cbs.on_ping_success = test_on_ping_success;
+    cbs.on_ping_timeout = test_on_ping_timeout;
+    cbs.on_ping_end = test_on_ping_end;
+    cbs.cb_args = "foo";  // arguments that feeds to all callback functions, can be NULL
+    // cbs.cb_args = eth_event_group;
 
     esp_ping_handle_t ping;
-    esp_err_t err = esp_ping_new_session(&ping_config, &cbs, &ping);
-    if (err == ESP_OK) {
-        ESP_LOGE(TAG, "good new ping session");
-        esp_err_t start_err = esp_ping_start(ping);
-        if(start_err == ESP_OK) {
-            ESP_LOGE(TAG, "esp ping start OK");
-        }
-    } else {
-        ESP_LOGE(TAG, "Failed to start ping session");
-    }
+    esp_ping_new_session(&ping_config, &cbs, &ping);
+
+    printf("START PING\n");
+    esp_ping_start(ping);
 }
-
-
-// void send_ping_to_host(const char *target_ip)
-// {
-//     printf("send_ping_to_host\n");
-
-//     esp_ping_config_t ping_config = ESP_PING_DEFAULT_CONFIG();
-//     ping_config.target_addr = inet_addr("8.8.8.8");  // Set the target IP address
-//     ping_config.count = 4;                           // Number of ping requests to send
-
-//     esp_ping_callbacks_t cbs = {
-//         .cb_args = NULL,
-//         .on_ping_success = ping_results,             // Called on each ping success
-//         .on_ping_end = ping_results,                 // Called when pinging ends
-//     };
-
-//     esp_ping_handle_t ping;
-//     esp_err_t err = esp_ping_new_session(&ping_config, &cbs, &ping);
-//     if (err == ESP_OK) {
-//         esp_ping_start(ping);
-//     } else {
-//         ESP_LOGE(TAG, "Failed to start ping session");
-//     }
-// }

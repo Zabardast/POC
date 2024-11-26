@@ -11,6 +11,9 @@
 
 #include "my_net_tools.c"
 
+#include "setup_station.c"
+#include "setup_ap.c"
+
 #define DEFAULT_SCAN_LIST_SIZE 10
 
 void init_nvs()
@@ -24,13 +27,15 @@ void init_nvs()
     ESP_ERROR_CHECK(ret);
 }
 
-void got_ip()
-{
-    printf("event got ip\n");
-}
+// void got_ip()
+// {
+//     printf("event got ip\n");
+// }
 
 void app_main()
 {
+
+    vTaskDelay(2000);
 
     init_nvs();
 
@@ -44,9 +49,11 @@ void app_main()
     esp_log_level_set("wifi", ESP_LOG_DEBUG);
 
     // event handlers
-    // esp_event_handler_instance_register(IP_EVENT_STA_GOT_IP, ESP_EVENT_ANY_ID, &got_ip, NULL, NULL);
-    
-    esp_event_handler_register(IP_EVENT, IP_EVENT_AP_STAIPASSIGNED, &wifi_sta_ap_event_ip_forwarding, NULL);
+
+    // esp_event_handler_register(IP_EVENT, IP_EVENT_STA_LOST_IP, &wifi_sta_lost_ip, NULL);
+    // 
+    // esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_sta_ap_event_ip_forwarding, NULL);
+
     // esp_err_t hre = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &wifi_sta_ap_event_ip_forwarding, NULL);
     // if (hre != ESP_OK)
     // {
@@ -58,7 +65,7 @@ void app_main()
 
 
     // Be a AP_STA with ip forwarding
-    init_AP_STA();
+    // init_AP_STA();
 
 
     //----------------------------------------------------------------
@@ -72,12 +79,12 @@ void app_main()
 
 
     // Be a AP
-    // init_access_point();
+    init_access_point();
 
 
     // Be a AP_STA with ip forwarding
     // init_AP_STA();
 
     // start_ping();
-    // ip_forwarding();
+    // initialize_ping();
 }
