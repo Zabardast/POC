@@ -4,7 +4,7 @@
 
 #include "keys.c"
 
-static const char *LOG_TAG = "WIFI_STATION ";
+static const char *STA_LOG_TAG = "WIFI_STATION ";
 
 void station_got_ip(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
@@ -12,22 +12,22 @@ void station_got_ip(void* arg, esp_event_base_t event_base, int32_t event_id, vo
         
         ip_event_got_ip_t* ip_event_data = (ip_event_got_ip_t*) event_data;
         
-        ESP_LOGI(LOG_TAG, "new ip : "IPSTR , IP2STR(&ip_event_data->ip_info.ip));
+        ESP_LOGI(STA_LOG_TAG, "new ip : "IPSTR , IP2STR(&ip_event_data->ip_info.ip));
     } else {
-        ESP_LOGI(LOG_TAG, "no action for this event_id");
+        ESP_LOGI(STA_LOG_TAG, "no action for this event_id");
     }
 }
 
 void station_connect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     if(event_id == IP_EVENT_STA_LOST_IP || event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        ESP_LOGI(LOG_TAG, "lost connection -> retrying...");
+        ESP_LOGI(STA_LOG_TAG, "lost connection -> retrying...");
         esp_wifi_connect();
     } else if(event_id == WIFI_EVENT_STA_START) {
-        ESP_LOGI(LOG_TAG, "start connection -> connectiong...");
+        ESP_LOGI(STA_LOG_TAG, "start connection -> connectiong...");
         esp_wifi_connect();
     } else {
-        ESP_LOGI(LOG_TAG, "no action for this event_id");
+        ESP_LOGI(STA_LOG_TAG, "no action for this event_id");
     }
 }
 
