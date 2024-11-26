@@ -72,8 +72,6 @@ void init_station()
                 .capable = true,
                 .required = true
             },
-            // .bssid_set = false,
-            // .channel = 6
         },
     };
 

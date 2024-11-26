@@ -2,10 +2,7 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 
-
-// tcpip_adapter_sta_list_t
-// #include "esp_event.h"
-#include "esp_netif.h"
+// #include "esp_netif.h"
 
 #include "keys.c"
 
@@ -39,8 +36,6 @@ void init_access_point()
 
     esp_netif_t* ap_netif = esp_netif_create_default_wifi_ap();
 
-    //
-    // esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, new_device, ap_netif);
     esp_event_handler_register(IP_EVENT, IP_EVENT_AP_STAIPASSIGNED, new_device, ap_netif);
 
 
