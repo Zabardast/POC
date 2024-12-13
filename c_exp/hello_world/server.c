@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
 
 	//create socket
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(server_fd == -1) perror("socket");
 
 	// config socket
     serv_addr.sin_family = AF_INET;
@@ -27,13 +28,26 @@ int main(int argc, char *argv[])
     serv_addr.sin_port = htons(4242);
 
 	//bind
-	bind(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	if(bind(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+	{
+		perror("bind");
+		close(server_fd);
+	}
 	
 	//listen
-	listen(server_fd, 5);
+	if(listen(server_fd, 5) < 0)
+	{
+		perror("listen");
+		close(server_fd);
+	}
 	
 	//accept
 	client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
+	if(client_fd < 0)
+	{
+		perror("socket");
+		close(server_fd);
+	} 
 
 	printf("new client connected\n");
 
@@ -52,6 +66,8 @@ int main(int argc, char *argv[])
 		break;
 
 	}
+
+	printf("close sockets\n");
 
 	close(client_fd);
     close(server_fd);
