@@ -48,38 +48,12 @@ void app_main()
     printf("start wifi :\n");
     esp_log_level_set("wifi", ESP_LOG_DEBUG);
 
-    // event handlers
-
-    // esp_event_handler_register(IP_EVENT, IP_EVENT_STA_LOST_IP, &wifi_sta_lost_ip, NULL);
-    // 
-    // esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_sta_ap_event_ip_forwarding, NULL);
-
-    // esp_err_t hre = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &wifi_sta_ap_event_ip_forwarding, NULL);
-    // if (hre != ESP_OK)
-    // {
-    //     printf("Failed to register event handler\n");
-    // }
-
-    // need one with an IP_EVENT to capture sta ip
-    // tcpip_adapter_get_sta_list();
-
-
-    // Be a AP_STA with ip forwarding
-    // init_AP_STA();
-
-
-    //----------------------------------------------------------------
-
-
-
-    //----------------------------------------------------------------
-    
     // Be a STA
-    // init_station();
+    init_station();
 
 
     // Be a AP
-    init_access_point();
+    // init_access_point();
 
 
     // Be a AP_STA with ip forwarding

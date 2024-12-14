@@ -26,6 +26,7 @@ int main(int argc, char *argv[])
     client_addr.sin_family = AF_INET;
     client_addr.sin_addr.s_addr = INADDR_ANY;
     client_addr.sin_port = htons(4242);
+	
 
 	//connect
 	if(connect(client_fd, (struct sockaddr *)&client_addr, client_size) < 0)
