@@ -44,7 +44,10 @@ void tcp_send(void *data)
     
     client_addr.sin_family = AF_INET;
     client_addr.sin_port = htons(4242);
-    inet_pton(AF_INET, "10.0.0.218", &client_addr.sin_addr);
+    // PC ip from router
+    // inet_pton(AF_INET, "10.0.0.218", &client_addr.sin_addr);
+    // PC ip from esp32 AP
+    inet_pton(AF_INET, "192.168.4.4", &client_addr.sin_addr);
 
     if(connect(client_fd, (struct sockaddr *)&client_addr, client_size) < 0)
     {
@@ -65,8 +68,6 @@ void start_trafic(void* arg, esp_event_base_t event_base, int32_t event_id, void
     {
         ESP_LOGI(STA_LOG_TAG, "creat task");
         xTaskCreatePinnedToCore(tcp_send, "send_tcp_hello", 4096, NULL, 1, NULL, 0);
-        ESP_LOGI(STA_LOG_TAG, "start scheduler");
-        // vTaskStartScheduler();
     }
 }
 
@@ -76,44 +77,18 @@ void app_main()
 {
 
     vTaskDelay(4000);
-    // int client_fd;
-    // struct sockaddr_in client_addr;
-    // socklen_t client_size = sizeof(client_addr);
 
     init_nvs();
 
     printf("start sta: \n");
 
-    eventGroup = xEventGroupCreate();
+// eventGroup = 
+    xEventGroupCreate();
     
     // setup sta
     init_station();
 
     // wait for IP || put the code below in a task that starts once an IP is aquired
     esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &start_trafic, NULL);
-
-    // xTaskCreatePinnedToCore(tcp_send, "send_tcp_hello", 4096, NULL, 1, NULL, 0);
-
-    // vTaskStartScheduler();
-
-    // //send hello to server
-    // client_fd = socket(AF_INET, SOCK_STREAM, 0);
-    // if(client_fd == -1)
-    // {
-    //     ESP_LOGE(STA_LOG_TAG, "socket creation error");
-    // }
-    
-    // client_addr.sin_family = AF_INET;
-    // client_addr.sin_port = htons(4242);
-    // inet_pton(AF_INET, "10.0.0.218", &client_addr.sin_addr);
-
-    // if(connect(client_fd, (struct sockaddr *)&client_addr, client_size) < 0)
-    // {
-    //     ESP_LOGE(STA_LOG_TAG, "connect error");
-    //     close(client_fd);
-    // }
-
-    // // send!!
-    // send(client_fd, "hello", 5 ,0);
 
 }

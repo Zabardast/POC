@@ -19,8 +19,15 @@ void station_got_ip(void* arg, esp_event_base_t event_base, int32_t event_id, vo
 
 void station_connect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    if(event_id == IP_EVENT_STA_LOST_IP || event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        ESP_LOGI(STA_LOG_TAG, "lost connection -> retrying...");
+    if(event_id == IP_EVENT_STA_LOST_IP) {
+        ESP_LOGI(STA_LOG_TAG, "lost ip -> retrying...");
+        esp_wifi_connect();
+    } else if(event_id == WIFI_EVENT_STA_DISCONNECTED){
+        ESP_LOGI(STA_LOG_TAG, "disconnected -> retrying...");
+        ESP_LOGI(STA_LOG_TAG," %i" ,((wifi_event_sta_disconnected_t*)event_data)->reason);
+        //WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD  = 211,
+        if(((wifi_event_sta_disconnected_t*)event_data)->reason == 211)
+            ESP_LOGI(STA_LOG_TAG, "211 == WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD");
         esp_wifi_connect();
     } else if(event_id == WIFI_EVENT_STA_START) {
         ESP_LOGI(STA_LOG_TAG, "start connection -> connectiong...");
@@ -82,6 +89,17 @@ void init_station()
 
     printf("Wifi start result: %i\n", wf_result);
 
-    esp_wifi_connect();
+    esp_err_t wf_connect_result = esp_wifi_connect();
+
+    if( wf_connect_result == ESP_OK)
+    {
+        ESP_LOGI(STA_LOG_TAG, "esp_wifi_connect OK");
+    } else if( wf_connect_result == ESP_ERR_WIFI_SSID)
+    {
+        ESP_LOGI(STA_LOG_TAG, "esp_wifi_connect wrong SSID");
+    } else if( wf_connect_result == ESP_ERR_WIFI_CONN)
+    {
+        ESP_LOGI(STA_LOG_TAG, "esp_wifi_connect internal error");
+    }
 
 }

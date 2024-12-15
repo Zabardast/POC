@@ -49,11 +49,11 @@ void app_main()
     esp_log_level_set("wifi", ESP_LOG_DEBUG);
 
     // Be a STA
-    init_station();
+    // init_station();
 
 
     // Be a AP
-    // init_access_point();
+    init_access_point();
 
 
     // Be a AP_STA with ip forwarding

@@ -52,7 +52,7 @@ void init_access_point()
             .password = EXAMPLE_ESP_WIFI_PASS,
             .channel = EXAMPLE_ESP_WIFI_CHANNEL,
             .max_connection = EXAMPLE_MAX_STA_CONN,
-            .authmode = WIFI_AUTH_WPA2_PSK
+            .authmode = WIFI_AUTH_WPA3_PSK
         },
     };
     
