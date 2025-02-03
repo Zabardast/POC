@@ -53,11 +53,11 @@ void app_main()
 
 
     // Be a AP
-    init_access_point();
+    // init_access_point();
 
 
     // Be a AP_STA with ip forwarding
-    // init_AP_STA();
+    init_AP_STA();
 
     // start_ping();
     // initialize_ping();

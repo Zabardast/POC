@@ -6,3 +6,4 @@ esp32/wifi/include/keys.c
 esp32/wifi/.*
 esp32/wifi6/include/keys.c
 esp32/wifi6/.*
+esp32/tcp_client/include/keys.c
