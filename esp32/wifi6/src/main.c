@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 
 #include <string.h> // memset
@@ -10,6 +11,7 @@
 #include "keys.c"
 
 #include "my_net_tools.c"
+// #include "deep.c"
 
 #include "setup_station.c"
 #include "setup_ap.c"
@@ -27,15 +29,11 @@ void init_nvs()
     ESP_ERROR_CHECK(ret);
 }
 
-// void got_ip()
-// {
-//     printf("event got ip\n");
-// }
-
 void app_main()
 {
 
-    vTaskDelay(2000);
+    // vTaskDelay(2000);
+    vTaskDelay(1000);
 
     init_nvs();
 
@@ -46,7 +44,9 @@ void app_main()
     }
 
     printf("start wifi :\n");
-    esp_log_level_set("wifi", ESP_LOG_DEBUG);
+    // esp_log_level_set("wifi", ESP_LOG_DEBUG);
+    // esp_log_level_set("wifi", ESP_LOG_NONE);
+    esp_log_level_set("esp_netif_lwip", ESP_LOG_VERBOSE);
 
     // Be a STA
     // init_station();
@@ -62,3 +62,6 @@ void app_main()
     // start_ping();
     // initialize_ping();
 }
+
+
+
