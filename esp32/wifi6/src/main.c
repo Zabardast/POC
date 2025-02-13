@@ -1,9 +1,4 @@
-
 #include <stdio.h>
-
-#include <string.h> // memset
-
-#include "esp_wifi.h"
 
 // tmp NVS
 #include "nvs_flash.h"
@@ -11,10 +6,10 @@
 #include "keys.c"
 
 #include "my_net_tools.c"
-// #include "deep.c"
 
-#include "setup_station.c"
-#include "setup_ap.c"
+// #include "deep.c"
+// #include "setup_station.c"
+// #include "setup_ap.c"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 
@@ -47,6 +42,9 @@ void app_main()
     // esp_log_level_set("wifi", ESP_LOG_DEBUG);
     // esp_log_level_set("wifi", ESP_LOG_NONE);
     esp_log_level_set("esp_netif_lwip", ESP_LOG_VERBOSE);
+    esp_log_level_set("lwip", ESP_LOG_DEBUG);
+    esp_log_level_set(0x00U, ESP_LOG_DEBUG);
+    // esp_log_level_set(IP_DEBUG, ESP_LOG_VERBOSE);
 
     // Be a STA
     // init_station();
